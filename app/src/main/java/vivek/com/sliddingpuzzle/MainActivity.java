@@ -7,53 +7,112 @@
 
 package vivek.com.sliddingpuzzle;
 
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.os.Bundle;
-import android.support.design.widget.FloatingActionButton;
-import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
-import android.support.v7.widget.Toolbar;
+import android.view.MotionEvent;
 import android.view.View;
-import android.view.Menu;
-import android.view.MenuItem;
+import android.view.ViewGroup;
+import android.widget.RelativeLayout;
 
-public class MainActivity extends AppCompatActivity {
+import java.util.ArrayList;
+import java.util.Collections;
+
+import vivek.com.sliddingpuzzle.model.Position;
+import vivek.com.sliddingpuzzle.model.TileItem;
+import vivek.com.sliddingpuzzle.utils.BitmapSplitter;
+
+public class MainActivity extends AppCompatActivity implements View.OnTouchListener {
+
+    RelativeLayout fullBoardView;
+    Bitmap[][] bitmapTiles;
+    TileItem[][] puzzleTiles;
+    private static int boardWidth = 450;
+    private static int numberOfRows = 3;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
-        setSupportActionBar(toolbar);
 
-        FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
-        fab.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
-                        .setAction("Action", null).show();
+        fullBoardView = (RelativeLayout) findViewById(R.id.puzzleFullBoardView);
+        bitmapTiles = this.createTileBitmaps();
+        puzzleTiles = this.initializePuzzleTiles(bitmapTiles);
+        this.renderTiles(puzzleTiles);
+    }
+
+    private Bitmap[][] createTileBitmaps() {
+        Bitmap image = BitmapFactory.decodeResource(getApplicationContext().getResources(), R.drawable.puzzle1);
+        return BitmapSplitter.split(image, boardWidth, numberOfRows);
+    }
+
+    private ArrayList<Bitmap> shuffleTiles(Bitmap[][] bitmapTiles) {
+
+        ArrayList<Bitmap> bitmapList = new ArrayList<>();
+
+        for (int i = 0; i < numberOfRows; i++) {
+            for(int j = 0; j< numberOfRows; j++) {
+                bitmapList.add(bitmapTiles[i][j]);
             }
-        });
-    }
-
-    @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-        // Inflate the menu; this adds items to the action bar if it is present.
-        getMenuInflater().inflate(R.menu.menu_main, menu);
-        return true;
-    }
-
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        // Handle action bar item clicks here. The action bar will
-        // automatically handle clicks on the Home/Up button, so long
-        // as you specify a parent activity in AndroidManifest.xml.
-        int id = item.getItemId();
-
-        //noinspection SimplifiableIfStatement
-        if (id == R.id.action_settings) {
-            return true;
         }
 
-        return super.onOptionsItemSelected(item);
+        //Remove the list piece
+        bitmapList.remove(bitmapList.size()-1);
+        bitmapList.add(null);
+        Collections.shuffle(bitmapList);
+        return bitmapList;
+    }
+
+    private TileItem[][] initializePuzzleTiles(Bitmap[][] bitmapTiles) {
+        TileItem[][] puzzleTile = new TileItem[numberOfRows][numberOfRows];
+
+        ArrayList<Bitmap> bitmapList = shuffleTiles(bitmapTiles);
+        int tileWidth = (boardWidth/numberOfRows);
+        int bitmapPosition = 0;
+
+        for (int i = 0; i < numberOfRows; i++) {
+            for(int j = 0; j< numberOfRows; j++) {
+                TileItem tile = new TileItem(getApplicationContext());
+                tile.setId(bitmapPosition);
+                tile.setCurrentPosition(new Position(i, j));
+                tile.setStartingPosition(new Position(i, j));
+                tile.setImage(bitmapList.get(bitmapPosition++));
+                tile.setDimension(tileWidth);
+                puzzleTile[i][j] = tile;
+            }
+        }
+
+        return puzzleTile;
+    }
+
+    private void renderTiles(TileItem[][] puzzleTiles) {
+        for (int i = 0; i < numberOfRows; i++ ) {
+            for (int j = 0; j < numberOfRows; j++) {
+                RelativeLayout.LayoutParams params = new RelativeLayout.LayoutParams(
+                        ViewGroup.LayoutParams.WRAP_CONTENT,
+                        ViewGroup.LayoutParams.WRAP_CONTENT
+                );
+//                 if (i == 0) {
+                     params.addRule(RelativeLayout.ALIGN_PARENT_LEFT, RelativeLayout.TRUE);
+//                 } else {
+//                     params.tol
+//                 }
+
+                params.leftMargin = (j * (boardWidth/numberOfRows))+10;
+                params.topMargin = (i * (boardWidth/numberOfRows))+10;
+
+                fullBoardView.addView(puzzleTiles[i][j], params);
+                puzzleTiles[i][j].setOnTouchListener(this);
+
+            }
+        }
+    }
+
+    @Override
+    public boolean onTouch(View v, MotionEvent event) {
+        TileItem selectedTile = (TileItem) v;
+
+        return true;
     }
 }
