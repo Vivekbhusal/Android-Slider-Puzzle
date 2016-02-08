@@ -7,7 +7,7 @@
 
 package vivek.com.sliddingpuzzle.model;
 
-public class Position {
+public class    Position {
 
     int xAxis;
     int yAxis;

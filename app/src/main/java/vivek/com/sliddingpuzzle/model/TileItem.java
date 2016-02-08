@@ -9,8 +9,6 @@ package vivek.com.sliddingpuzzle.model;
 
 import android.content.Context;
 import android.graphics.Bitmap;
-import android.view.MotionEvent;
-import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
@@ -31,9 +29,9 @@ public class TileItem extends ImageView {
                 ViewGroup.LayoutParams.WRAP_CONTENT,
                 ViewGroup.LayoutParams.WRAP_CONTENT
         );
-        params.setMargins(5,5,5,5);
+        params.setMargins(5, 5, 5, 5);
         setLayoutParams(params);
-        setOnTouchListener(this);
+//        setOnTouchListener(this);
 
     }
 
@@ -70,4 +68,10 @@ public class TileItem extends ImageView {
         setLayoutParams(params);
     }
 
+    @Override
+    public String toString() {
+        return "TileItem{" +
+                ", isBlank=" + isBlank +
+                '}';
+    }
 }

@@ -11,6 +11,7 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
+import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
@@ -79,6 +80,7 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
                 tile.setStartingPosition(new Position(i, j));
                 tile.setImage(bitmapList.get(bitmapPosition++));
                 tile.setDimension(tileWidth);
+                tile.setOnTouchListener(this);
                 puzzleTile[i][j] = tile;
             }
         }
@@ -100,10 +102,9 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
 //                 }
 
                 params.leftMargin = (j * (boardWidth/numberOfRows))+10;
-                params.topMargin = (i * (boardWidth/numberOfRows))+10;
+                params.topMargin = (i * (boardWidth / numberOfRows)) + 10;
 
                 fullBoardView.addView(puzzleTiles[i][j], params);
-                puzzleTiles[i][j].setOnTouchListener(this);
 
             }
         }
@@ -113,6 +114,17 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
     public boolean onTouch(View v, MotionEvent event) {
         TileItem selectedTile = (TileItem) v;
 
+        Log.v("selected tile", selectedTile.toString());
+
+        if(event.getActionMasked() == MotionEvent.ACTION_DOWN) {
+
+//            View.DragShadowBuilder shadowBuilder = new View.DragShadowBuilder(v);
+//            v.startDrag()
+        } else if(event.getActionMasked()== MotionEvent.ACTION_MOVE) {
+
+        } else if(event.getActionMasked() == MotionEvent.ACTION_UP) {
+
+        }
         return true;
     }
 }
