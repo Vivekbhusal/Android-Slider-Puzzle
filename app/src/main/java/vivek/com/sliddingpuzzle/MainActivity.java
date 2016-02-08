@@ -11,26 +11,33 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
-import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
-import android.view.ViewGroup;
+import android.widget.Button;
+import android.widget.ImageView;
 import android.widget.RelativeLayout;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 
 import vivek.com.sliddingpuzzle.model.Position;
 import vivek.com.sliddingpuzzle.model.TileItem;
 import vivek.com.sliddingpuzzle.utils.BitmapSplitter;
 
-public class MainActivity extends AppCompatActivity implements View.OnTouchListener {
+public class MainActivity extends AppCompatActivity implements View.OnTouchListener, View.OnClickListener {
 
     RelativeLayout fullBoardView;
     Bitmap[][] bitmapTiles;
-    TileItem[][] puzzleTiles;
-    private static int boardWidth = 450;
-    private static int numberOfRows = 3;
+    LinkedHashMap<Integer, TileItem> puzzleItemList;
+    TileItem emptyTile;
+    Button ViewOriginalImage;
+    ImageView originImage;
+
+    public static int boardWidth = 600;
+    public static int numberOfRows = 3;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -38,37 +45,65 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
         setContentView(R.layout.activity_main);
 
         fullBoardView = (RelativeLayout) findViewById(R.id.puzzleFullBoardView);
+        ViewOriginalImage = (Button) findViewById(R.id.originalImageButton);
+        originImage = (ImageView) findViewById(R.id.originalImage);
+        ViewOriginalImage.setOnTouchListener(this);
+
         bitmapTiles = this.createTileBitmaps();
-        puzzleTiles = this.initializePuzzleTiles(bitmapTiles);
-        this.renderTiles(puzzleTiles);
+        puzzleItemList = this.initializePuzzleTiles(bitmapTiles);
+        this.shuffleAndRenderTiles(puzzleItemList);
     }
 
+    /**
+     * Creates the array of bitmap by splitting image into pieces
+     * @return
+     */
     private Bitmap[][] createTileBitmaps() {
-        Bitmap image = BitmapFactory.decodeResource(getApplicationContext().getResources(), R.drawable.puzzle1);
+        Bitmap image = BitmapFactory.decodeResource(getApplicationContext().getResources(), R.drawable.imagepuzzle2);
         return BitmapSplitter.split(image, boardWidth, numberOfRows);
     }
 
-    private ArrayList<Bitmap> shuffleTiles(Bitmap[][] bitmapTiles) {
-
-        ArrayList<Bitmap> bitmapList = new ArrayList<>();
-
-        for (int i = 0; i < numberOfRows; i++) {
-            for(int j = 0; j< numberOfRows; j++) {
-                bitmapList.add(bitmapTiles[i][j]);
-            }
-        }
-
+    /**
+     * Shuffle the existing list of tiles to render randomly
+     * @param puzzleTile
+     * @return
+     */
+    private LinkedHashMap<Integer, TileItem> shuffleTiles(LinkedHashMap<Integer, TileItem> puzzleTile) {
         //Remove the list piece
-        bitmapList.remove(bitmapList.size()-1);
-        bitmapList.add(null);
-        Collections.shuffle(bitmapList);
-        return bitmapList;
+        emptyTile = puzzleTile.get(puzzleTile.size()-1);
+        emptyTile.setImage(null);
+        emptyTile.setIsBlank(true);
+
+        //shuffle
+        List keys = new ArrayList(puzzleTile.keySet());
+        Collections.shuffle(keys);
+
+        LinkedHashMap<Integer, TileItem> shuffledTile = new LinkedHashMap<>();
+        int i=0;
+        for (Object o: keys){
+            TileItem item = puzzleTile.get(o);
+            int xAxis = (i<3)? i : (i%3);
+            int yAxis = 0;
+            if(i>=3 && i<=5) {
+                yAxis = 1;
+            } else if(i>=6 && i<=8) {
+                yAxis = 2;
+            }
+
+            item.setCurrentPosition(new Position(xAxis, yAxis));
+            shuffledTile.put((int) o, puzzleTile.get(o));
+            i++;
+        }
+        return shuffledTile;
     }
 
-    private TileItem[][] initializePuzzleTiles(Bitmap[][] bitmapTiles) {
-        TileItem[][] puzzleTile = new TileItem[numberOfRows][numberOfRows];
-
-//        ArrayList<Bitmap> bitmapList = shuffleTiles(bitmapTiles);
+    /**
+     * Creates the array of Tile item, assigns bitmap and create Hashmap
+     * @param bitmapTiles
+     * @return
+     */
+    private LinkedHashMap<Integer, TileItem> initializePuzzleTiles(Bitmap[][] bitmapTiles) {
+        LinkedHashMap<Integer, TileItem> puzzleItem = new LinkedHashMap<>();
         int tileWidth = (boardWidth/numberOfRows);
         int bitmapPosition = 0;
 
@@ -76,55 +111,66 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
             for(int j = 0; j< numberOfRows; j++) {
                 TileItem tile = new TileItem(getApplicationContext());
                 tile.setId(bitmapPosition);
-                tile.setCurrentPosition(new Position(i, j));
                 tile.setStartingPosition(new Position(i, j));
                 tile.setImage(bitmapTiles[i][j]);
                 tile.setDimension(tileWidth);
                 tile.setOnTouchListener(this);
-                puzzleTile[i][j] = tile;
+                puzzleItem.put(bitmapPosition++, tile);
             }
         }
 
-        return puzzleTile;
+        return puzzleItem;
     }
 
-    private void renderTiles(TileItem[][] puzzleTiles) {
-        for (int i = 0; i < numberOfRows; i++ ) {
-            for (int j = 0; j < numberOfRows; j++) {
-                RelativeLayout.LayoutParams params = new RelativeLayout.LayoutParams(
-                        ViewGroup.LayoutParams.WRAP_CONTENT,
-                        ViewGroup.LayoutParams.WRAP_CONTENT
-                );
-//                 if (i == 0) {
-                     params.addRule(RelativeLayout.ALIGN_PARENT_LEFT, RelativeLayout.TRUE);
-//                 } else {
-//                     params.tol
-//                 }
 
-                params.leftMargin = (j * (boardWidth/numberOfRows))+10;
-                params.topMargin = (i * (boardWidth / numberOfRows)) + 10;
+    private void shuffleAndRenderTiles(LinkedHashMap<Integer, TileItem> puzzleItem) {
+        LinkedHashMap<Integer, TileItem> shuffledTiles = this.shuffleTiles(puzzleItem);
 
-                fullBoardView.addView(puzzleTiles[i][j], params);
-
-            }
+        for(Map.Entry<Integer, TileItem> entry: shuffledTiles.entrySet()) {
+            TileItem item = entry.getValue();
+            fullBoardView.addView(item, item.setLayout());
         }
+
     }
 
     @Override
     public boolean onTouch(View v, MotionEvent event) {
+        if(v.getId() == R.id.originalImageButton) {
+            displayOriginalImage(event);
+            return true;
+        }
+
         TileItem selectedTile = (TileItem) v;
 
-        Log.v("selected tile", selectedTile.toString());
+        switch(event.getActionMasked()) {
+            case MotionEvent.ACTION_DOWN:
+                if(selectedTile.getIsBlank()) {
+                    return false;
+                }
+                break;
+            case MotionEvent.ACTION_MOVE:
 
-        if(event.getActionMasked() == MotionEvent.ACTION_DOWN) {
-
-//            View.DragShadowBuilder shadowBuilder = new View.DragShadowBuilder(v);
-//            v.startDrag()
-        } else if(event.getActionMasked()== MotionEvent.ACTION_MOVE) {
-
-        } else if(event.getActionMasked() == MotionEvent.ACTION_UP) {
-
+                break;
+            case MotionEvent.ACTION_UP:
+                break;
         }
         return true;
+    }
+
+    @Override
+    public void onClick(View v) {
+    }
+
+    public void displayOriginalImage(MotionEvent event) {
+        switch (event.getActionMasked()) {
+            case MotionEvent.ACTION_DOWN:
+                fullBoardView.setVisibility(View.GONE);
+                originImage.setVisibility(View.VISIBLE);
+                break;
+            case MotionEvent.ACTION_UP:
+                fullBoardView.setVisibility(View.VISIBLE);
+                originImage.setVisibility(View.GONE);
+                break;
+        }
     }
 }

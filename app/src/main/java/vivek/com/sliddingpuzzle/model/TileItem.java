@@ -14,6 +14,7 @@ import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
 
+import vivek.com.sliddingpuzzle.MainActivity;
 import vivek.com.sliddingpuzzle.R;
 
 public class TileItem extends ImageView {
@@ -25,14 +26,18 @@ public class TileItem extends ImageView {
 
     public TileItem(Context context ) {
         super(context);
+    }
+
+    public RelativeLayout.LayoutParams setLayout() {
         RelativeLayout.LayoutParams params = new RelativeLayout.LayoutParams(
                 ViewGroup.LayoutParams.WRAP_CONTENT,
                 ViewGroup.LayoutParams.WRAP_CONTENT
         );
-        params.setMargins(5, 5, 5, 5);
-        setLayoutParams(params);
-//        setOnTouchListener(this);
+        params.addRule(RelativeLayout.ALIGN_PARENT_LEFT, RelativeLayout.TRUE);
+        params.leftMargin = (currentPosition.getyAxis() * (MainActivity.boardWidth/MainActivity.numberOfRows))+10;
+        params.topMargin = (currentPosition.getxAxis() * (MainActivity.boardWidth / MainActivity.numberOfRows)) + 10;
 
+        return params;
     }
 
     public void setImage(Bitmap image) {
@@ -68,10 +73,18 @@ public class TileItem extends ImageView {
         setLayoutParams(params);
     }
 
+    public Boolean getIsBlank() {
+        return isBlank;
+    }
+
+    public void setIsBlank(Boolean isBlank) {
+        this.isBlank = isBlank;
+    }
+
     @Override
     public String toString() {
         return "TileItem{" +
-                ", isBlank=" + isBlank +
+                "isBlank=" + isBlank +
                 '}';
     }
 }
