@@ -68,7 +68,7 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
     private TileItem[][] initializePuzzleTiles(Bitmap[][] bitmapTiles) {
         TileItem[][] puzzleTile = new TileItem[numberOfRows][numberOfRows];
 
-        ArrayList<Bitmap> bitmapList = shuffleTiles(bitmapTiles);
+//        ArrayList<Bitmap> bitmapList = shuffleTiles(bitmapTiles);
         int tileWidth = (boardWidth/numberOfRows);
         int bitmapPosition = 0;
 
@@ -78,7 +78,7 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
                 tile.setId(bitmapPosition);
                 tile.setCurrentPosition(new Position(i, j));
                 tile.setStartingPosition(new Position(i, j));
-                tile.setImage(bitmapList.get(bitmapPosition++));
+                tile.setImage(bitmapTiles[i][j]);
                 tile.setDimension(tileWidth);
                 tile.setOnTouchListener(this);
                 puzzleTile[i][j] = tile;
