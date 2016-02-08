@@ -9,7 +9,6 @@ package vivek.com.sliddingpuzzle.model;
 
 import android.content.Context;
 import android.graphics.Bitmap;
-import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
@@ -30,8 +29,8 @@ public class TileItem extends ImageView {
 
     public RelativeLayout.LayoutParams setLayout() {
         RelativeLayout.LayoutParams params = new RelativeLayout.LayoutParams(
-                ViewGroup.LayoutParams.WRAP_CONTENT,
-                ViewGroup.LayoutParams.WRAP_CONTENT
+                MainActivity.boardWidth/MainActivity.numberOfRows,
+                MainActivity.boardWidth/MainActivity.numberOfRows
         );
         params.addRule(RelativeLayout.ALIGN_PARENT_LEFT, RelativeLayout.TRUE);
         params.leftMargin = (currentPosition.getxAxis() * (MainActivity.boardWidth/MainActivity.numberOfRows));

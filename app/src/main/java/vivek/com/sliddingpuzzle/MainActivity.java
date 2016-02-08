@@ -11,10 +11,12 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
+import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
 
 import java.util.ArrayList;
@@ -37,6 +39,8 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
     Button ViewOriginalImage;
     ImageView originImage;
 
+    int deviceWidth;
+
     public static int boardWidth = 600;
     public static int numberOfRows = 3;
 
@@ -45,7 +49,13 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        deviceWidth = getWindowManager().getDefaultDisplay().getWidth();
+
         fullBoardView = (RelativeLayout) findViewById(R.id.puzzleFullBoardView);
+        LinearLayout.LayoutParams boardParam = new LinearLayout.LayoutParams(600,600);
+        boardParam.leftMargin = (deviceWidth-boardWidth)/2;
+        fullBoardView.setLayoutParams(boardParam);
+
         ViewOriginalImage = (Button) findViewById(R.id.originalImageButton);
         originImage = (ImageView) findViewById(R.id.originalImage);
         ViewOriginalImage.setOnTouchListener(this);
@@ -158,7 +168,7 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
                     return false;
                 break;
             case MotionEvent.ACTION_MOVE:
-
+                dragTilesAround(selectedTile, event);
 
                 break;
             case MotionEvent.ACTION_UP:
@@ -199,5 +209,19 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
                 originImage.setVisibility(View.GONE);
                 break;
         }
+    }
+
+    public void dragTilesAround(TileItem selectedTile, MotionEvent event) {
+        int xCoordinate = (int) event.getRawX();
+        int yCoordinate = (int) event.getRawY();
+
+        Log.d("xcoordinate", xCoordinate+"");
+        Log.d("ycoordinate", yCoordinate+"");
+
+        RelativeLayout.LayoutParams param = (RelativeLayout.LayoutParams) selectedTile.getLayoutParams();
+        param.leftMargin = xCoordinate;
+        param.topMargin = yCoordinate;
+
+        selectedTile.setLayoutParams(param);
     }
 }
