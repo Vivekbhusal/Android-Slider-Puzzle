@@ -34,16 +34,59 @@ public class TileItem extends ImageView {
                 ViewGroup.LayoutParams.WRAP_CONTENT
         );
         params.addRule(RelativeLayout.ALIGN_PARENT_LEFT, RelativeLayout.TRUE);
-        params.leftMargin = (currentPosition.getyAxis() * (MainActivity.boardWidth/MainActivity.numberOfRows))+10;
-        params.topMargin = (currentPosition.getxAxis() * (MainActivity.boardWidth / MainActivity.numberOfRows)) + 10;
+        params.leftMargin = (currentPosition.getxAxis() * (MainActivity.boardWidth/MainActivity.numberOfRows));
+        params.topMargin = (currentPosition.getyAxis() * (MainActivity.boardWidth / MainActivity.numberOfRows));
 
         return params;
     }
 
+
+    public void swapPositionWith(Position itemPosition) {
+        int oldLeftMargin = (currentPosition.getxAxis() * (MainActivity.boardWidth/MainActivity.numberOfRows));
+        int oldTopMargin = (currentPosition.getyAxis() * (MainActivity.boardWidth / MainActivity.numberOfRows));
+
+        setCurrentPosition(itemPosition);
+        RelativeLayout.LayoutParams params = (RelativeLayout.LayoutParams) getLayoutParams();
+
+        int newleftMargin = (currentPosition.getxAxis() * (MainActivity.boardWidth/MainActivity.numberOfRows));
+        int newTopMargin = (currentPosition.getyAxis() * (MainActivity.boardWidth / MainActivity.numberOfRows));
+
+        if(newleftMargin == oldLeftMargin){
+            if(oldTopMargin > newTopMargin) {
+                for(int i = oldTopMargin; i >= newTopMargin; i--) {
+                    params.leftMargin = oldLeftMargin;
+                    params.topMargin = i;
+                    setLayoutParams(params);
+
+                }
+            } else {
+                for(int i = oldTopMargin; i<= newTopMargin; i++) {
+                    params.leftMargin = oldLeftMargin;
+                    params.topMargin = i;
+                    setLayoutParams(params);
+                }
+            }
+        } else if(newTopMargin == oldTopMargin) {
+            if(oldLeftMargin < newleftMargin) {
+                for(int i = oldLeftMargin; i<= newleftMargin; i++) {
+                    params.leftMargin = i;
+                    params.topMargin = oldTopMargin;
+                    setLayoutParams(params);
+                }
+            } else {
+                for(int i = oldLeftMargin; i>=newleftMargin; i--) {
+                    params.leftMargin = i;
+                    params.topMargin = oldTopMargin;
+                    setLayoutParams(params);
+                }
+            }
+        }
+    }
+
     public void setImage(Bitmap image) {
         if(image == null) {
-            setBackgroundColor(getContext().getResources().getColor(R.color.black));
-            setAlpha(100);
+            setBackgroundColor(getContext().getResources().getColor(R.color.white));
+            setAlpha(0);
             isBlank = true;
         } else {
             setImageBitmap(image);
@@ -86,5 +129,26 @@ public class TileItem extends ImageView {
         return "TileItem{" +
                 "isBlank=" + isBlank +
                 '}';
+    }
+
+    public boolean isLeftOf(TileItem matchTile) {
+
+        return (currentPosition.yAxis == matchTile.currentPosition.yAxis
+                && currentPosition.xAxis == matchTile.currentPosition.xAxis - 1);
+    }
+
+    public boolean isRightOf(TileItem matchTile) {
+        return  (currentPosition.yAxis == matchTile.currentPosition.yAxis
+                && currentPosition.xAxis == matchTile.currentPosition.xAxis + 1);
+    }
+
+    public boolean isbelowOf(TileItem matchTile) {
+        return (currentPosition.xAxis == matchTile.currentPosition.xAxis
+                && currentPosition.yAxis == matchTile.currentPosition.yAxis+1);
+    }
+
+    public boolean isAboveOf(TileItem matchTile) {
+        return (currentPosition.xAxis == matchTile.currentPosition.xAxis
+                && currentPosition.yAxis == matchTile.currentPosition.yAxis-1);
     }
 }

@@ -27,11 +27,12 @@ import vivek.com.sliddingpuzzle.model.Position;
 import vivek.com.sliddingpuzzle.model.TileItem;
 import vivek.com.sliddingpuzzle.utils.BitmapSplitter;
 
-public class MainActivity extends AppCompatActivity implements View.OnTouchListener, View.OnClickListener {
+public class MainActivity extends AppCompatActivity implements View.OnTouchListener{
 
     RelativeLayout fullBoardView;
     Bitmap[][] bitmapTiles;
     LinkedHashMap<Integer, TileItem> puzzleItemList;
+    LinkedHashMap<Integer, TileItem> shuffledTiles;
     TileItem emptyTile;
     Button ViewOriginalImage;
     ImageView originImage;
@@ -118,13 +119,17 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
                 puzzleItem.put(bitmapPosition++, tile);
             }
         }
-
         return puzzleItem;
     }
 
 
+    /**
+     * Shuffle the origin list of tiles before render.
+     *
+     * @param puzzleItem
+     */
     private void shuffleAndRenderTiles(LinkedHashMap<Integer, TileItem> puzzleItem) {
-        LinkedHashMap<Integer, TileItem> shuffledTiles = this.shuffleTiles(puzzleItem);
+        shuffledTiles = this.shuffleTiles(puzzleItem);
 
         for(Map.Entry<Integer, TileItem> entry: shuffledTiles.entrySet()) {
             TileItem item = entry.getValue();
@@ -142,25 +147,47 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
 
         TileItem selectedTile = (TileItem) v;
 
+        //Do nothing if the tile is blank
+        if(selectedTile.getIsBlank()) {
+            return false;
+        }
+
         switch(event.getActionMasked()) {
             case MotionEvent.ACTION_DOWN:
-                if(selectedTile.getIsBlank()) {
+                if(!checkIfValidMove(selectedTile))
                     return false;
-                }
                 break;
             case MotionEvent.ACTION_MOVE:
 
+
                 break;
             case MotionEvent.ACTION_UP:
+                swapTileWithEmpty(selectedTile);
                 break;
         }
         return true;
     }
 
-    @Override
-    public void onClick(View v) {
+    public boolean checkIfValidMove(TileItem selectedItem) {
+
+        return (selectedItem.isAboveOf(emptyTile)
+                || selectedItem.isbelowOf(emptyTile)
+                || selectedItem.isLeftOf(emptyTile)
+                || selectedItem.isRightOf(emptyTile));
     }
 
+    public void swapTileWithEmpty(TileItem selectedItem) {
+        Position selecteItemPosition = selectedItem.getCurrentPosition();
+
+        selectedItem.swapPositionWith(emptyTile.getCurrentPosition());
+        emptyTile.swapPositionWith(selecteItemPosition);
+
+
+    }
+    /**
+     * Display the original image during button press and hide after release
+     * @param event
+     */
     public void displayOriginalImage(MotionEvent event) {
         switch (event.getActionMasked()) {
             case MotionEvent.ACTION_DOWN:

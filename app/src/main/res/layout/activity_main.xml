@@ -52,8 +52,7 @@
         android:layout_height="wrap_content"
         android:gravity="center"
         android:layout_marginTop="20px"
-        android:layout_gravity="center"
-        android:background="@drawable/tile_background">
+        android:layout_gravity="center">
 
     </RelativeLayout>
 
