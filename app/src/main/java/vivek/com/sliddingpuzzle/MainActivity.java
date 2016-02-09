@@ -296,7 +296,12 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
         int originLeftMargin = selectedItem.getCurrentPosition().getxAxis() * tileSize;
         int currentLeftMargin = params.leftMargin;
 
-        return (originalTopMargin == currentTopMargin && originLeftMargin == currentLeftMargin);
+        /**
+         * Many times clicking move ths side, so to add the better experience
+         * we keep 5pixels plus minus.
+         */
+        return (Math.abs(originalTopMargin - currentTopMargin) < 5
+                && (originLeftMargin - currentLeftMargin) < 5);
     }
 
     /**
