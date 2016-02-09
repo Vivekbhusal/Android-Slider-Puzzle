@@ -19,6 +19,7 @@ import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
+import android.widget.TextView;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -41,6 +42,7 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
     Button ViewOriginalImage;
     ImageView originImage;
     RectF moveableBoundary;
+    TextView stepCountView;
 
     Point deviceDimension;
 //    int puzzleBoardWidth;
@@ -50,6 +52,7 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
     public static int numberOfRows = 4;
     public static int PUZZLE_BOARD_LEFT_MARGIN = 20;
     private int tileSize;
+    private int stepCount=0;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -62,6 +65,9 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
         //Get the width of puzzle board leaving equal margin on left and right
         boardWidth = deviceDimension.x - 2*PUZZLE_BOARD_LEFT_MARGIN;
         tileSize = boardWidth/numberOfRows;
+
+        //View to display the number of counts
+        stepCountView = (TextView) findViewById(R.id.puzzleStepCounts);
 
         //Get the Puzzle board and initialize its parameter
         fullBoardView = (RelativeLayout) findViewById(R.id.puzzleFullBoardView);
@@ -205,6 +211,7 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
             case MotionEvent.ACTION_UP:
                 if(tileDraggedMoreThenHalfWay(selectedTile) || isJustClick(selectedTile)) {
                     swapTileWithEmpty(selectedTile);
+                    increaseStepCounts();
                 } else {
                     bringTileToOriginalPostion(selectedTile);
                 }
@@ -239,6 +246,7 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
 //                new FloatEvaluator(), )
         selectedItem.swapPositionWith(emptyTile.getCurrentPosition());
         emptyTile.swapPositionWith(selectedItemPosition);
+
     }
 
 
@@ -275,6 +283,21 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
         return false;
     }
 
+    /**
+     * Check if the touch even was just click
+     * @param selectedItem
+     * @return
+     */
+    private boolean isJustClick(TileItem selectedItem) {
+        RelativeLayout.LayoutParams params = (RelativeLayout.LayoutParams) selectedItem.getLayoutParams();
+        int originalTopMargin = selectedItem.getCurrentPosition().getyAxis() * tileSize;
+        int currentTopMargin = params.topMargin;
+
+        int originLeftMargin = selectedItem.getCurrentPosition().getxAxis() * tileSize;
+        int currentLeftMargin = params.leftMargin;
+
+        return (originalTopMargin == currentTopMargin && originLeftMargin == currentLeftMargin);
+    }
 
     /**
      * Display the original image during button press and hide after release
@@ -369,6 +392,10 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
         int selectedItemButtom = selectedItemTop + tileSize;
 
         return new RectF(selectedItemLeft, selectedItemTop, selectedItemRght, selectedItemButtom);
+    }
 
+    public void increaseStepCounts() {
+        stepCount++;
+        stepCountView.setText(String.valueOf(stepCount));
     }
 }
