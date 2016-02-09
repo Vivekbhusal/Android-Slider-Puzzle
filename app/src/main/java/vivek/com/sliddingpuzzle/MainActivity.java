@@ -9,9 +9,10 @@ package vivek.com.sliddingpuzzle;
 
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.Point;
+import android.graphics.RectF;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
-import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
 import android.widget.Button;
@@ -28,6 +29,7 @@ import java.util.Map;
 import vivek.com.sliddingpuzzle.model.Position;
 import vivek.com.sliddingpuzzle.model.TileItem;
 import vivek.com.sliddingpuzzle.utils.BitmapSplitter;
+import vivek.com.sliddingpuzzle.utils.DeviceProperty;
 
 public class MainActivity extends AppCompatActivity implements View.OnTouchListener{
 
@@ -38,30 +40,51 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
     TileItem emptyTile;
     Button ViewOriginalImage;
     ImageView originImage;
+    RectF moveableBoundary;
 
-    int deviceWidth;
+    Point deviceDimension;
+//    int puzzleBoardWidth;
+    int touchPositionX, touchPositionY;
 
-    public static int boardWidth = 600;
-    public static int numberOfRows = 3;
+    public static int boardWidth;
+    public static int numberOfRows = 4;
+    public static int PUZZLE_BOARD_LEFT_MARGIN = 20;
+    private int tileSize;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        deviceWidth = getWindowManager().getDefaultDisplay().getWidth();
+        //Get the dimension of the device
+        deviceDimension = DeviceProperty.getDeviceDimension(MainActivity.this);
 
+        //Get the width of puzzle board leaving equal margin on left and right
+        boardWidth = deviceDimension.x - 2*PUZZLE_BOARD_LEFT_MARGIN;
+        tileSize = boardWidth/numberOfRows;
+
+        //Get the Puzzle board and initialize its parameter
         fullBoardView = (RelativeLayout) findViewById(R.id.puzzleFullBoardView);
-        LinearLayout.LayoutParams boardParam = new LinearLayout.LayoutParams(600,600);
-        boardParam.leftMargin = (deviceWidth-boardWidth)/2;
+        LinearLayout.LayoutParams boardParam = new LinearLayout.LayoutParams(boardWidth,boardWidth);
+        boardParam.leftMargin = PUZZLE_BOARD_LEFT_MARGIN;
+        boardParam.rightMargin = PUZZLE_BOARD_LEFT_MARGIN;
         fullBoardView.setLayoutParams(boardParam);
 
-        ViewOriginalImage = (Button) findViewById(R.id.originalImageButton);
+        //Initialize the original image view and set it on same arrangment for good display
         originImage = (ImageView) findViewById(R.id.originalImage);
+        originImage.setLayoutParams(boardParam);
+
+        //Initialize button to view Original image
+        ViewOriginalImage = (Button) findViewById(R.id.originalImageButton);
         ViewOriginalImage.setOnTouchListener(this);
 
+        //Create the sliced bitmap from provided Image
         bitmapTiles = this.createTileBitmaps();
+
+        //Initialize the list of puzzle tiles with sliced bitmaps
         puzzleItemList = this.initializePuzzleTiles(bitmapTiles);
+
+        //Shuffle the tile and render on play board
         this.shuffleAndRenderTiles(puzzleItemList);
     }
 
@@ -93,12 +116,14 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
         int i=0;
         for (Object o: keys){
             TileItem item = puzzleTile.get(o);
-            int xAxis = (i<3)? i : (i%3);
+            int xAxis = (i < numberOfRows)? i : (i % numberOfRows);
             int yAxis = 0;
-            if(i>=3 && i<=5) {
+            if(i>=4 && i<=7) {
                 yAxis = 1;
-            } else if(i>=6 && i<=8) {
+            } else if(i>=8 && i<=11) {
                 yAxis = 2;
+            } else if(i>=12 && i<=15) {
+                yAxis = 3;
             }
 
             item.setCurrentPosition(new Position(xAxis, yAxis));
@@ -166,18 +191,35 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
             case MotionEvent.ACTION_DOWN:
                 if(!checkIfValidMove(selectedTile))
                     return false;
+                touchPositionX = (int) event.getRawX();
+                touchPositionY = (int) event.getRawY();
+                selectedTile.bringToFront();
+                moveableBoundary = getMoveableBoundry(selectedTile);
                 break;
             case MotionEvent.ACTION_MOVE:
                 dragTilesAround(selectedTile, event);
+                touchPositionX = (int) event.getRawX();
+                touchPositionY = (int) event.getRawY();
 
                 break;
             case MotionEvent.ACTION_UP:
-                swapTileWithEmpty(selectedTile);
+                if(tileDraggedMoreThenHalfWay(selectedTile) || isJustClick(selectedTile)) {
+                    swapTileWithEmpty(selectedTile);
+                } else {
+                    bringTileToOriginalPostion(selectedTile);
+                }
+
                 break;
         }
         return true;
     }
 
+    /**
+     * Check if the tile can make a move, that is,
+     * if the tile has blank space to its surrounding
+     * @param selectedItem
+     * @return
+     */
     public boolean checkIfValidMove(TileItem selectedItem) {
 
         return (selectedItem.isAboveOf(emptyTile)
@@ -186,14 +228,54 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
                 || selectedItem.isRightOf(emptyTile));
     }
 
+    /**
+     * Swap the position of tile and empty space
+     * @param selectedItem
+     */
     public void swapTileWithEmpty(TileItem selectedItem) {
-        Position selecteItemPosition = selectedItem.getCurrentPosition();
-
+        Position selectedItemPosition = selectedItem.getCurrentPosition();
+//
+//        ObjectAnimator animator = ObjectAnimator.ofObject(selectedItem, "",
+//                new FloatEvaluator(), )
         selectedItem.swapPositionWith(emptyTile.getCurrentPosition());
-        emptyTile.swapPositionWith(selecteItemPosition);
-
-
+        emptyTile.swapPositionWith(selectedItemPosition);
     }
+
+
+    /**
+     * In case the swap fails or is illegal move,
+     * we bring the selected tile to its original postion
+     * @param selectedItem
+     */
+    public void bringTileToOriginalPostion(TileItem selectedItem) {
+        selectedItem.setLayoutParams(selectedItem.setLayout());
+    }
+
+    /**
+     * Check if the tile has move halfway to the empty tiles
+     * @param selectedItem
+     * @return
+     */
+    private boolean tileDraggedMoreThenHalfWay(TileItem selectedItem) {
+
+        RelativeLayout.LayoutParams params = (RelativeLayout.LayoutParams) selectedItem.getLayoutParams();
+        int originalMargin = 0, currentMargin = 0;
+
+        if(selectedItem.isbelowOf(emptyTile) || selectedItem.isAboveOf(emptyTile)) {
+            originalMargin = selectedItem.getCurrentPosition().getyAxis() * tileSize;
+            currentMargin = params.topMargin;
+        } else {
+            originalMargin = selectedItem.getCurrentPosition().getxAxis() * tileSize;
+            currentMargin = params.leftMargin;
+        }
+
+        if(Math.abs(originalMargin - currentMargin) >= tileSize/2) {
+            return true;
+        }
+        return false;
+    }
+
+
     /**
      * Display the original image during button press and hide after release
      * @param event
@@ -211,17 +293,82 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
         }
     }
 
+    /**
+     * Dragging the selected tiles
+     * @param selectedTile
+     * @param event
+     */
     public void dragTilesAround(TileItem selectedTile, MotionEvent event) {
-        int xCoordinate = (int) event.getRawX();
-        int yCoordinate = (int) event.getRawY();
+        int xCoordinate = (int) event.getRawX() - touchPositionX;
+        int yCoordinate = (int) event.getRawY() - touchPositionY;
 
-        Log.d("xcoordinate", xCoordinate+"");
-        Log.d("ycoordinate", yCoordinate+"");
+        //Get the current boundary of selected tile.
+        RectF selectedTileBoundary = getSelectedTileBoundary(selectedTile);
 
-        RelativeLayout.LayoutParams param = (RelativeLayout.LayoutParams) selectedTile.getLayoutParams();
-        param.leftMargin = xCoordinate;
-        param.topMargin = yCoordinate;
+        /**
+         * on coordinate might go side ways duing drag, so if its not within the
+         * moveableBoundary, do not render the layout
+         */
+        if(moveableBoundary.contains(selectedTileBoundary)) {
 
-        selectedTile.setLayoutParams(param);
+            RelativeLayout.LayoutParams param = (RelativeLayout.LayoutParams) selectedTile.getLayoutParams();
+            param.height = tileSize;
+            param.width = tileSize;
+            if(selectedTile.isRightOf(emptyTile) || selectedTile.isLeftOf(emptyTile)) {
+                param.leftMargin = xCoordinate + param.leftMargin;
+            } else {
+                param.topMargin = yCoordinate + param.topMargin;
+            }
+            selectedTile.setLayoutParams(param);
+        }
+
+    }
+
+    /**
+     * Calculate the total boundary on where slide can move
+     * summation of selected slide and empty slide
+     * @param selectedItem
+     * @return
+     */
+    public RectF getMoveableBoundry(TileItem selectedItem) {
+        int boardTop = (int) Math.floor(fullBoardView.getY());
+        int boardLeft = (int) Math.floor(fullBoardView.getX());
+
+        int emptyTop = (emptyTile.getCurrentPosition().getyAxis() * tileSize)+boardTop;
+        int emptyLeft = (emptyTile.getCurrentPosition().getxAxis() * tileSize)+boardLeft;
+        int emptyRght = emptyLeft + tileSize;
+        int emptyButtom = emptyTop +tileSize;
+
+        int selectedItemTop = (selectedItem.getCurrentPosition().getyAxis() * tileSize)+boardTop;
+        int selectedItemLeft = (selectedItem.getCurrentPosition().getxAxis() * tileSize)+boardLeft;
+        int selectedItemRght = selectedItemLeft + tileSize;
+        int selectedItemButtom = selectedItemTop + tileSize;
+
+        int left = (emptyLeft <= selectedItemLeft) ? emptyLeft: selectedItemLeft;
+        int top = (emptyTop <= selectedItemTop) ? emptyTop: selectedItemTop;
+        int right = (emptyRght >= selectedItemRght) ? emptyRght : selectedItemRght;
+        int buttom = (emptyButtom >= selectedItemButtom) ? emptyButtom : selectedItemButtom;
+
+        return new RectF(left, top, right, buttom);
+    }
+
+    /**
+     * Calculate the total boundary of selected Slide at current position
+     * Used to measure the boundary when slide is being dragged
+     * @param selectedItem
+     * @return
+     */
+    public RectF getSelectedTileBoundary(TileItem selectedItem) {
+        int boardTop = (int) Math.floor(fullBoardView.getY());
+        int boardLeft = (int) Math.floor(fullBoardView.getX());
+
+        RelativeLayout.LayoutParams params = (RelativeLayout.LayoutParams) selectedItem.getLayoutParams();
+        int selectedItemLeft = boardLeft + params.leftMargin;
+        int selectedItemTop = boardTop + params.topMargin;
+        int selectedItemRght = selectedItemLeft + tileSize;
+        int selectedItemButtom = selectedItemTop + tileSize;
+
+        return new RectF(selectedItemLeft, selectedItemTop, selectedItemRght, selectedItemButtom);
+
     }
 }
