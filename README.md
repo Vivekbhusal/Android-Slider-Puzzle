@@ -14,6 +14,7 @@ It's a really simple android Puzzle game application. When you open the applicat
 9. Implement a button or option to view original image. 
 
 The current application is all functional and works perfectly. There are still lots of improvements I want to bring in, like
+
 1. Better User interface
 2. User being able to select custom image
 3. Drag multiple tiles
